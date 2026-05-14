@@ -3,214 +3,190 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Briefcase, ChevronDown, LogOut, User, Bookmark, LayoutDashboard } from "lucide-react";
+import { 
+  Menu, 
+  X, 
+  Briefcase, 
+  ChevronDown, 
+  LogOut, 
+  User, 
+  Bookmark, 
+  LayoutDashboard,
+  Plus,
+  FileText
+} from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
   const user = session?.user;
 
+  const initials = user?.name ? getInitials(user.name) : "U";
+
+  const isEmployer = user?.role === "employer" || user?.role === "admin";
+  const isSeeker = user?.role === "seeker" || user?.role === "admin";
+
   return (
-    <nav className="bg-obsidian border-b border-white/[0.06] sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-iris rounded-lg flex items-center justify-center">
-            <Briefcase size={14} className="text-white" />
-          </div>
-          <span className="text-white font-medium text-base tracking-tight">
-            Hired.
-          </span>
-        </Link>
-
-        {/* Centre links — desktop */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link
-            href="/jobs"
-            className="text-sm text-white/60 hover:text-white transition-colors duration-150"
-          >
-            Browse jobs
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-display text-xl font-bold tracking-tight text-foreground">
+              Hired<span className="text-primary">.</span>
+            </span>
           </Link>
-          {user?.role === "employer" && (
-            <Link
-              href="/dashboard"
-              className="text-sm text-white/60 hover:text-white transition-colors duration-150"
-            >
-              Dashboard
+
+          {/* Center nav — desktop */}
+          <nav className="hidden md:flex items-center gap-2">
+            <Link href="/jobs">
+              <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hover:text-foreground">
+                Browse Jobs
+              </Button>
             </Link>
-          )}
-        </div>
+            {isSeeker && (
+              <Link href="/saved">
+                <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hover:text-foreground">
+                  Saved Jobs
+                </Button>
+              </Link>
+            )}
+            {isEmployer && (
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hover:text-foreground">
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+          </nav>
 
-        {/* Right side — desktop */}
-        <div className="hidden md:flex items-center gap-3">
-          {!user ? (
-            <>
-              <Link
-                href="/auth/signin"
-                className="text-sm text-white/60 hover:text-white transition-colors duration-150"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/register"
-                className="text-sm bg-iris text-white px-4 py-1.5 rounded-lg hover:bg-[#5952D4] transition-colors duration-150"
-              >
-                Get started
-              </Link>
-            </>
-          ) : (
-            <div className="flex items-center gap-3">
-              {user.role === "employer" && (
-                <Link
-                  href="/jobs/new"
-                  className="text-sm bg-iris text-white px-4 py-1.5 rounded-lg hover:bg-[#5952D4] transition-colors duration-150"
-                >
-                  Post a job
+          {/* Right: auth + theme */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            
+            {!user ? (
+              <div className="hidden md:flex items-center gap-2">
+                <Link href="/auth/signin">
+                  <Button variant="ghost" size="sm">Sign in</Button>
                 </Link>
-              )}
-
-              {/* Avatar dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                >
-                  {user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.name ?? ""}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-iris flex items-center justify-center text-white text-xs font-medium">
-                      {getInitials(user.name ?? "U")}
-                    </div>
-                  )}
-                  <span className="text-sm text-white/80">{user.name}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-wide bg-iris-light text-iris-mid px-1.5 py-0.5 rounded-full">
-                    {user.role}
-                  </span>
-                  <ChevronDown size={14} className="text-white/40" />
-                </button>
-
-                {dropdownOpen && (
-                  <div className="absolute right-0 top-10 w-48 bg-white border border-gray-200/60 rounded-xl shadow-lg py-1 z-50">
-                    <Link
-                      href="/profile"
-                      onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-text-pri hover:bg-gray-50 transition-colors"
-                    >
-                      <User size={14} />
-                      Profile
-                    </Link>
-                    {user.role === "seeker" && (
-                      <Link
-                        href="/saved"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-text-pri hover:bg-gray-50 transition-colors"
-                      >
-                        <Bookmark size={14} />
-                        Saved jobs
-                      </Link>
-                    )}
-                    {user.role === "employer" && (
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-text-pri hover:bg-gray-50 transition-colors"
-                      >
-                        <LayoutDashboard size={14} />
-                        Dashboard
-                      </Link>
-                    )}
-                    {user.role === "admin" && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-text-pri hover:bg-gray-50 transition-colors"
-                      >
-                        <LayoutDashboard size={14} />
-                        Admin
-                      </Link>
-                    )}
-                    <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button
-                        onClick={() => signOut({ callbackUrl: "/" })}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-dark hover:bg-red-light w-full transition-colors"
-                      >
-                        <LogOut size={14} />
-                        Sign out
-                      </button>
+                <Link href="/auth/register">
+                  <Button size="sm" className="rounded-full px-5">Get started</Button>
+                </Link>
+              </div>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-transform active:scale-95">
+                    <Avatar className="h-8 w-8 border border-border">
+                      <AvatarImage src={user.image ?? undefined} alt={user.name ?? "User"} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl border-border shadow-lg">
+                  <div className="px-2 py-2">
+                    <p className="text-sm font-semibold text-foreground leading-none mb-1">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                      {user.role}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="rounded-lg focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                    <Link href="/profile" className="flex w-full items-center">
+                      <User className="mr-2 w-4 h-4" /> Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  {isSeeker && (
+                    <DropdownMenuItem asChild className="rounded-lg focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                      <Link href="/saved" className="flex w-full items-center">
+                        <Bookmark className="mr-2 w-4 h-4" /> Saved Jobs
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isEmployer && (
+                    <DropdownMenuItem asChild className="rounded-lg focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                      <Link href="/dashboard" className="flex w-full items-center">
+                        <LayoutDashboard className="mr-2 w-4 h-4" /> Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="rounded-lg text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                  >
+                    <LogOut className="mr-2 w-4 h-4" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden text-white/60 hover:text-white"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+            {/* Mobile menu toggle */}
+            <button
+              className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-obsidian border-t border-white/[0.06] px-4 py-4 flex flex-col gap-3">
-          <Link
-            href="/jobs"
-            onClick={() => setMenuOpen(false)}
-            className="text-sm text-white/60 hover:text-white transition-colors"
-          >
-            Browse jobs
+        <div className="md:hidden border-t border-border bg-card px-4 py-6 flex flex-col gap-4 animate-in slide-in-from-top duration-200">
+          <Link href="/jobs" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Browse Jobs
           </Link>
+          {isSeeker && (
+            <Link href="/saved" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Saved Jobs
+            </Link>
+          )}
+          {isEmployer && (
+            <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Dashboard
+            </Link>
+          )}
           {!user ? (
-            <>
-              <Link
-                href="/auth/signin"
-                onClick={() => setMenuOpen(false)}
-                className="text-sm text-white/60 hover:text-white transition-colors"
-              >
-                Sign in
+            <div className="flex flex-col gap-2 pt-2 border-t border-border">
+              <Link href="/auth/signin" onClick={() => setMenuOpen(false)}>
+                <Button variant="outline" className="w-full rounded-lg">Sign in</Button>
               </Link>
-              <Link
-                href="/auth/register"
-                onClick={() => setMenuOpen(false)}
-                className="text-sm bg-iris text-white px-4 py-2 rounded-lg text-center hover:bg-[#5952D4] transition-colors"
-              >
-                Get started
+              <Link href="/auth/register" onClick={() => setMenuOpen(false)}>
+                <Button className="w-full rounded-lg">Get started</Button>
               </Link>
-            </>
+            </div>
           ) : (
-            <>
-              <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-sm text-white/60 hover:text-white transition-colors">Profile</Link>
-              {user.role === "seeker" && (
-                <Link href="/saved" onClick={() => setMenuOpen(false)} className="text-sm text-white/60 hover:text-white transition-colors">Saved jobs</Link>
-              )}
-              {user.role === "employer" && (
-                <>
-                  <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="text-sm text-white/60 hover:text-white transition-colors">Dashboard</Link>
-                  <Link href="/jobs/new" onClick={() => setMenuOpen(false)} className="text-sm bg-iris text-white px-4 py-2 rounded-lg text-center hover:bg-[#5952D4] transition-colors">Post a job</Link>
-                </>
-              )}
+            <div className="flex flex-col gap-2 pt-2 border-t border-border">
+              <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">
+                <User size={16} /> Profile
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="text-sm text-red-dark text-left hover:opacity-80 transition-opacity"
+                className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors flex items-center gap-2 text-left"
               >
-                Sign out
+                <LogOut size={16} /> Sign out
               </button>
-            </>
+            </div>
           )}
         </div>
       )}
-    </nav>
+    </header>
   );
 }
+
