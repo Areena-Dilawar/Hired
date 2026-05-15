@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,9 +20,16 @@ const loginSchema = z.object({
 type LoginData = z.infer<typeof loginSchema>;
 
 export default function SignInPage() {
+  const { data: session, status } = useSession();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
 
   const {
     register,
@@ -58,6 +65,14 @@ export default function SignInPage() {
   const handleOAuthSignIn = (provider: string) => {
     signIn(provider, { callbackUrl: "/" });
   };
+
+  if (status === "loading") {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-[#030303] min-h-[calc(100vh-64px)]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex items-center justify-center bg-[#030303] px-4 py-12 relative min-h-[calc(100vh-64px)] overflow-hidden">

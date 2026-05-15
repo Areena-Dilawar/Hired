@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, User as UserIcon, Zap, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -31,10 +31,17 @@ const registerSchema = z.object({
 type RegisterData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const { data: session, status } = useSession();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
 
   const {
     register,
@@ -81,6 +88,14 @@ export default function RegisterPage() {
   const handleOAuthSignIn = (provider: string) => {
     signIn(provider, { callbackUrl: "/" });
   };
+
+  if (status === "loading") {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-[#030303] min-h-[calc(100vh-64px)]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -339,7 +354,7 @@ export default function RegisterPage() {
                 <svg className="w-4 h-4 text-[#0A66C2] shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
                 </svg>
-                <span className="text-[10px] font-black tracking-widest opacity-60 group-hover/btn:opacity-100 transition-opacity truncate">LinkedIn</span>
+                <span className="text-[10px] font-black  tracking-widest opacity-60 group-hover/btn:opacity-100 transition-opacity truncate">LinkedIn</span>
               </Button>
             </div>
           </CardContent>
