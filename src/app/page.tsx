@@ -53,16 +53,16 @@ export default async function HomePage() {
             AI-Powered Job Matching
           </Badge>
 
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight mb-6">
-            Find the Work You <span className="text-primary relative inline-block">Love
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-tight mb-6">
+            Find your next <span className="text-primary relative inline-block">dream role
             <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none">
               <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
             </svg>
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-sans">
-            Our AI-powered platform matches your unique skills and potential with the perfect opportunities, faster than ever before.
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8 leading-relaxed">
+            Hired. connects top talent with world-class companies. Get AI-powered match scores, track applications, and land the job you deserve
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
