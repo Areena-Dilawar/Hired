@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Menu, 
   X, 
@@ -30,15 +30,35 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export default function Navbar() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [prevScrollPos, setPrevScrollPos] = useState(0);
+  
   const user = session?.user;
-
   const initials = user?.name ? getInitials(user.name) : "U";
-
   const isEmployer = user?.role === "employer" || user?.role === "admin";
   const isSeeker = user?.role === "seeker" || user?.role === "admin";
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollPos = window.scrollY;
+      
+      // Show navbar if scrolling up or at the very top
+      if (prevScrollPos > currentScrollPos || currentScrollPos < 10) {
+        setIsVisible(true);
+      } else {
+        // Hide navbar if scrolling down
+        setIsVisible(false);
+      }
+      
+      setPrevScrollPos(currentScrollPos);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [prevScrollPos]);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-md">
+    <header className={`fixed top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur-md transition-transform duration-500 ease-in-out ${isVisible ? "translate-y-0" : "-translate-y-full"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -189,4 +209,3 @@ export default function Navbar() {
     </header>
   );
 }
-

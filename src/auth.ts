@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+import LinkedInProvider from "next-auth/providers/linkedin";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 
@@ -32,17 +34,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID ?? "",
+      clientSecret: process.env.GITHUB_SECRET ?? "",
+    }),
+    LinkedInProvider({
+      clientId: process.env.LINKEDIN_ID ?? "",
+      clientSecret: process.env.LINKEDIN_SECRET ?? "",
+    }),
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google") {
+      if (account?.provider === "google" || account?.provider === "github" || account?.provider === "linkedin") {
         await connectDB();
         const existing = await User.findOne({ email: user.email });
         if (!existing) {
           await User.create({
             name: user.name,
             email: user.email,
-            password: `GOOGLE_OAUTH_${Date.now()}`,
+            password: `${account.provider.toUpperCase()}_OAUTH_${Date.now()}`,
             role: "seeker",
             avatar: user.image,
           });

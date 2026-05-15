@@ -25,7 +25,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Navbar />
-            <main className="flex-1 flex flex-col">{children}</main>
+            <main className="flex-1 flex flex-col pt-16">{children}</main>
           </ThemeProvider>
         </SessionProvider>
       </body>
