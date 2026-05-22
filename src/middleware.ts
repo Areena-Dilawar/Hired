@@ -7,12 +7,15 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName:
+      process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
   });
 
   const isAuth = !!token;
   const role = token?.role;
 
-  // Admin routes — admin only
   if (pathname.startsWith("/admin")) {
     if (!isAuth || role !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));
@@ -20,10 +23,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // Employer only routes
   if (pathname.startsWith("/dashboard") || pathname === "/jobs/new") {
     if (!isAuth) {
-      return NextResponse.redirect(new URL("/auth/signin", req.url));
+      const url = new URL("/auth/signin", req.url);
+      url.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(url);
     }
     if (role !== "employer" && role !== "admin") {
       return NextResponse.redirect(new URL("/jobs", req.url));
@@ -31,10 +35,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // Any authenticated user
   if (pathname.startsWith("/saved") || pathname.startsWith("/profile")) {
     if (!isAuth) {
-      return NextResponse.redirect(new URL("/auth/signin", req.url));
+      const url = new URL("/auth/signin", req.url);
+      url.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(url);
     }
     return NextResponse.next();
   }

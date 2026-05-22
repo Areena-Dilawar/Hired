@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -118,4 +119,181 @@ export async function sendJobAlertEmail({
       </div>
     `,
   });
+}
+
+export async function sendVerificationEmail({
+  to,
+  token,
+}: {
+  to: string;
+  token: string;
+}): Promise<void> {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const verificationLink = `${appUrl}/api/auth/verify?token=${token}`;
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px; background-color: #ffffff;">
+      <h2 style="color: #333333; text-align: center;">Welcome to Hired!</h2>
+      <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+        Thank you for registering. To ensure the security of your account and to start using our platform, please verify your email address by clicking the button below.
+      </p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${verificationLink}" style="background-color: #6C63FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Verify Email Address</a>
+      </div>
+      <p style="color: #777777; font-size: 14px; text-align: center;">
+        If you did not create an account, no further action is required.
+      </p>
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+      <p style="color: #aaaaaa; font-size: 12px; text-align: center;">
+        &copy; ${new Date().getFullYear()} Hired. All rights reserved.
+      </p>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Hired" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      to,
+      subject: "Verify your email address - Hired",
+      html: htmlContent,
+    });
+    console.log(`Verification email sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    // Don't throw to avoid crashing registration if email fails during dev, but ideally this should be handled
+  }
+}
+
+export async function sendRegisterOTPEmail({
+  to,
+  otp,
+}: {
+  to: string;
+  otp: string;
+}): Promise<void> {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px; background-color: #ffffff;">
+      <h2 style="color: #333333; text-align: center;">Verify your Hired account</h2>
+      <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+        Thank you for registering. Please use the following One-Time Password (OTP) to verify your email address. This code is valid for 10 minutes.
+      </p>
+      <div style="text-align: center; margin: 30px 0;">
+        <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #6C63FF; padding: 10px 20px; border: 2px dashed #6C63FF; border-radius: 8px; background-color: #fbfbfe; display: inline-block;">
+          ${otp}
+        </span>
+      </div>
+      <p style="color: #777777; font-size: 14px; text-align: center;">
+        If you did not request this code, you can safely ignore this email.
+      </p>
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+      <p style="color: #aaaaaa; font-size: 12px; text-align: center;">
+        &copy; ${new Date().getFullYear()} Hired. All rights reserved.
+      </p>
+    </div>
+  `;
+
+  // Log in development so we can bypass lack of local SMTP setup
+  if (process.env.NODE_ENV === "development") {
+    console.log("-----------------------------------------");
+    console.log(`[DEV ONLY] OTP for ${to}: ${otp}`);
+    console.log("-----------------------------------------");
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Hired" <${process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@hired.app"}>`,
+      to,
+      subject: "Your Registration Verification Code - Hired",
+      html: htmlContent,
+    });
+    console.log(`Verification OTP email sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending verification OTP email:", error);
+    if (process.env.NODE_ENV !== "development") {
+      throw new Error("Could not send verification email. Please try again later.");
+    }
+  }
+}
+
+export async function sendPasswordResetEmail({
+  to,
+  token,
+}: {
+  to: string;
+  token: string;
+}): Promise<void> {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const resetLink = `${appUrl}/auth/reset-password?token=${token}`;
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px; background-color: #ffffff;">
+      <h2 style="color: #333333; text-align: center;">Reset your Hired password</h2>
+      <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+        You recently requested to reset your password for your Hired account. Click the button below to reset it. <strong>This link is only valid for 1 hour.</strong>
+      </p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetLink}" style="background-color: #6C63FF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Reset Password</a>
+      </div>
+      <p style="color: #777777; font-size: 14px; text-align: center;">
+        If you did not request a password reset, please ignore this email or contact support if you have concerns.
+      </p>
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+      <p style="color: #aaaaaa; font-size: 12px; text-align: center;">
+        &copy; ${new Date().getFullYear()} Hired. All rights reserved.
+      </p>
+    </div>
+  `;
+
+  // Log in development
+  if (process.env.NODE_ENV === "development") {
+    console.log("-----------------------------------------");
+    console.log(`[DEV ONLY] Password Reset Link for ${to}:`);
+    console.log(resetLink);
+    console.log("-----------------------------------------");
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Hired" <${process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@hired.app"}>`,
+      to,
+      subject: "Reset your password - Hired",
+      html: htmlContent,
+    });
+    console.log(`Password reset email sent to ${to}`);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    if (process.env.NODE_ENV !== "development") {
+      throw new Error("Could not send password reset email. Please try again later.");
+    }
+  }
 }

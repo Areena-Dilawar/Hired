@@ -13,6 +13,11 @@ export interface IUser extends Document {
   savedJobs?: mongoose.Types.ObjectId[];
   alertKeyword?: string;
   alertEnabled: boolean;
+  isVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpiry?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpiry?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -41,6 +46,11 @@ const UserSchema = new Schema<IUser>(
     savedJobs: [{ type: Schema.Types.ObjectId, ref: "Job" }],
     alertKeyword: { type: String },
     alertEnabled: { type: Boolean, default: false },
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String },
+    verificationTokenExpiry: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpiry: { type: Date },
   },
   { timestamps: true }
 );
@@ -56,7 +66,11 @@ UserSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidate, this.password);
 };
 
-const User: Model<IUser> =
-  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+// Clear mongoose cache for Next.js HMR
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+const User: Model<IUser> = mongoose.model<IUser>("User", UserSchema);
 
 export default User;

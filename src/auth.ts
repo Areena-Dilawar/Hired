@@ -17,9 +17,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         await connectDB();
-        const user = await User.findOne({ email: (credentials.email as string).toLowerCase().trim() });
+        const user = await User.findOne({
+          email: (credentials.email as string).toLowerCase().trim(),
+        });
         if (!user) return null;
-        const isValid = await user.comparePassword(credentials.password as string);
+        if (!user.isVerified) throw new Error("Please verify your email to sign in.");
+        const isValid = await user.comparePassword(
+          credentials.password as string
+        );
         if (!isValid) return null;
         return {
           id: user._id.toString(),
@@ -38,7 +43,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     GitHubProvider({
       clientId: process.env.GITHUB_ID ?? "",
       clientSecret: process.env.GITHUB_SECRET ?? "",
-      authorization: { params: { prompt: "select_account" } },
     }),
     LinkedInProvider({
       clientId: process.env.LINKEDIN_ID ?? "",
@@ -52,7 +56,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: profile.name,
           email: profile.email,
           image: profile.picture,
-          role: "seeker", // Default role for social login
         };
       },
     }),
@@ -66,10 +69,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           await User.create({
             name: user.name,
             email: user.email,
-            password: `${account?.provider.toUpperCase()}_OAUTH_${Date.now()}`,
+            password: `${account?.provider?.toUpperCase()}_OAUTH_${Date.now()}`,
             role: "seeker",
             avatar: user.image,
-            provider: account?.provider, 
           });
         }
       }
@@ -78,16 +80,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.avatar = (user as any).avatar || (user as any).image;
+        token.role = (user as { role: "employer" | "seeker" | "admin" }).role;
+        token.avatar =
+          (user as { avatar?: string }).avatar ??
+          (user as { image?: string }).image;
       }
-
-      // Handle session updates (e.g., after profile edit)
       if (trigger === "update" && session) {
         return { ...token, ...session.user };
       }
-
-      // Ensure we always have the latest role from DB
       if (token.email && !token.role) {
         await connectDB();
         const dbUser = await User.findOne({ email: token.email });
@@ -101,16 +101,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).avatar = token.avatar;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.avatar = token.avatar;
       }
       return session;
     },
   },
-  pages: {
-    signIn: "/auth/signin",
-  },
+  pages: { signIn: "/auth/signin" },
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 });
